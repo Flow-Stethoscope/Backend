@@ -63,8 +63,8 @@ def process_audio_file(audio_path, sample_len):
     return process_audio_np(audio, sample_len)
 
 
-def process_audio_np(audio_np, sample_len):
-    audio = denoise_audio_np(audio_np)
+def process_audio_np(audio_np, sample_len, filter=False):
+    audio = denoise_audio_np(audio_np, filter)
 
     num_segments = int((audio.size / DOWN_SR) // sample_len)
     samples_per_segment = sample_len * DOWN_SR
@@ -83,8 +83,9 @@ def process_audio_np(audio_np, sample_len):
     return audio_segments
 
 
-def denoise_audio_np(audio_np, bpf_low=BPF_LOW, bpf_high=BPF_HIGH, bpf_order=BPF_ORDER):
-    audio = butter_bandpass_filter(audio_np, bpf_low, bpf_high, DOWN_SR, bpf_order)
+def denoise_audio_np(audio, bpf_low=BPF_LOW, bpf_high=BPF_HIGH, bpf_order=BPF_ORDER, filter=False):
+    if filter:
+        audio = butter_bandpass_filter(audio, bpf_low, bpf_high, DOWN_SR, bpf_order)
     return (audio - audio.min()) / (audio.max() - audio.min())  # normalize between 0 and 1
 
 

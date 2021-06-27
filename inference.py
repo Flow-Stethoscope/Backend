@@ -36,7 +36,7 @@ class Inference:
     def evaluate(self, X_test, y_test):
         metrics = [
             keras.metrics.Accuracy(),
-            keras.metrics.BinaryCrossentropy(),
+            keras.metrics.BinaryAccuracy(),
             keras.metrics.AUC(name="AUC-ROC", curve="ROC"),
             keras.metrics.AUC(name="AUC-PR", curve="PR"),
             keras.metrics.Precision(name="precision"),
@@ -49,7 +49,7 @@ class Inference:
         self.model.compile(optimizer="adam", loss="binary_crossentropy", metrics=metrics)
 
         result = self.model.evaluate(X_test, y_test)
-        result_dict = ["loss", "accuracy", "binary_crossentropy", "AUC-ROC", "AUC-PR", "precision", "recall",
+        result_dict = ["loss", "accuracy", "binary_accuracy", "AUC-ROC", "AUC-PR", "precision", "recall",
                        "true_positive", "false_positive", "false_negative", "true_negative"]
         result_dict = {metric: result[idx] for idx, metric in enumerate(result_dict)}
 

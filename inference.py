@@ -14,11 +14,12 @@ class Inference:
         self.model = keras.models.load_model(model_path)
         self.sample_rate = sample_rate
         self.data_len = 187
+        self.sample_len_sec = self.data_len / self.sample_rate
 
         self.model.summary()
 
     def predict(self, byte_list, threshold=0.05):
-        if len(byte_list) / self.sample_rate < self.data_len / self.sample_rate:
+        if len(byte_list) / self.sample_rate < self.sample_len_sec:
             return "unsure"
 
         x = self.preprocess(byte_list)
@@ -63,13 +64,13 @@ class Inference:
 
         return result_dict
 
-
-
     def preprocess(self, byte_list):
         audio = np.array(byte_list)
         audio = librosa.resample(audio, self.sample_rate, 1000)
-        mfccs = process_audio_np(audio, 5)  # 5 second samples
-        return np.array(mfccs)
+        audio_segments = process_audio_np(audio, self.sample_len_sec)
+        audio_segments = np.array(audio_segments)
+        audio_segments = np.expand_dims(audio_segments, -1)
+        return audio_segments
 
     def get_wav(self, byte_list, wav_path=Path("./tmp/tmp_recording.wav")):
         audio = np.array(byte_list)

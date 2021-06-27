@@ -16,6 +16,7 @@ BPF_ORDER = 3
 DATA_SR = 44100
 
 AUDIO_LEN = 1  # in seconds
+AUDIO_OVERLAP = 0.5
 num_samples = AUDIO_LEN * DOWN_SR
 
 
@@ -82,8 +83,9 @@ def process_audio_np(audio_np, sample_len):
 
     mfccs = []
     for current_segment in range(num_segments):
-        start = samples_per_segment * current_segment
-        end = start + samples_per_segment
+        start = samples_per_segment * current_segment - (AUDIO_OVERLAP * DOWN_SR)
+        end = start + samples_per_segment + (AUDIO_OVERLAP * DOWN_SR)
+        print(start, end)
 
         # find mfcc
         mfcc = librosa.feature.mfcc(

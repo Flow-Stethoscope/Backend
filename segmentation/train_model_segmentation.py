@@ -34,10 +34,10 @@ def create_model(X_shape, lr):
                 ),
             # keras.layers.SimpleRNN(32, input_shape=(X_shape[1], X_shape[2])),
             # keras.layers.Conv1D(8, 3, activation="relu", input_shape=(X_shape[1], X_shape[2])),
-            keras.layers.Flatten(),
-            keras.layers.BatchNormalization(),
-            keras.layers.ReLU(),
-            keras.layers.Dropout(0.4),
+            # keras.layers.Flatten(),
+            # keras.layers.BatchNormalization(),
+            # keras.layers.ReLU(),
+            # keras.layers.Dropout(0.4),
             keras.layers.Dense(100, activation="sigmoid"),
         ]
     )

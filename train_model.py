@@ -1,19 +1,29 @@
 from pathlib import Path
-import time
+import datetime
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
 import tensorflow.keras as keras
 
 
-def load_data_np(data_path):
-    X_train = np.load(data_path / "X_train.npy")
-    y_train = np.load(data_path / "y_train.npy")
-    X_test = np.load(data_path / "X_test.npy")
-    y_test = np.load(data_path / "y_test.npy")
+def load_data_np():
+    df_train = pd.read_csv("./datasets/ECG-kaggle/mitbih_train.csv", header=None)
+    df_train = df_train.sample(frac=1)
+    df_test = pd.read_csv("./datasets/ECG-kaggle/mitbih_test.csv", header=None)
+    df_test = df_test.sample(frac=1)
 
+    X_train = np.array(df_train[list(range(187))].values)
+    X_train = np.expand_dims(X_train, -1)
+    y_train = np.array(df_train[187].values).astype(np.int8)
+    y_train[y_train != 0] = 1  # converting to be just normal (0) and abnormal (1)
+
+    X_test = np.array(df_test[list(range(187))].values)
+    X_test = np.expand_dims(X_test, -1)
+    y_test = np.array(df_test[187].values).astype(np.int8)
+    y_test[y_test != 0] = 1
     print(
         f"X_train {X_train.shape}, y_train {y_train.shape}, X_test {X_test.shape}, y_test {y_test.shape}"
     )
@@ -26,11 +36,15 @@ def create_model(X_shape, lr):
         [
             keras.layers.Bidirectional(
                 keras.layers.LSTM(
-                    64, input_shape=(X_shape[1], X_shape[2]), return_sequences=True,
+                    128, input_shape=(X_shape[1], X_shape[2]), return_sequences=True,
                 )
             ),
-            keras.layers.Bidirectional(keras.layers.LSTM(32, return_sequences=True)),
-            keras.layers.Flatten(),
+            keras.layers.Bidirectional(keras.layers.LSTM(64, return_sequences=True)),
+            keras.layers.Bidirectional(keras.layers.LSTM(32, return_sequences=False)),
+            keras.layers.Dense(32),
+            keras.layers.BatchNormalization(),
+            keras.layers.ReLU(),
+            keras.layers.Dropout(0.7),
             keras.layers.Dense(16),
             keras.layers.BatchNormalization(),
             keras.layers.ReLU(),
@@ -58,21 +72,21 @@ def plot_history(history):
     axes[1].plot(history.history["accuracy"], label="train")
     axes[1].plot(history.history["val_accuracy"], label="test")
     axes[1].legend()
-    plt.show()
 
 
 if __name__ == "__main__":
-    mirrored_strategy = tf.distribute.MirroredStrategy(devices=["/gpu:0", "/gpu:1"])
+    mirrored_strategy = tf.distribute.MirroredStrategy()
 
-    EPOCHS = 10
-    BATCH_SIZE = 2
-    LEARNING_RATE = 1e-6
+    EPOCHS = 100
+    BATCH_SIZE = 2000
+    LEARNING_RATE = 1e-2
 
-    LOAD_MODEL = "none"  # "full", "weights", or "none"
+    LOAD_MODEL = "full"  # "full", "weights", or "none"
 
-    np_path = Path("./datasets/")
+    time_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    data_path = Path("./datasets/ECG-kaggle/mitbih_train.csv")
     model_path = Path("./model_saves/") / (
-        str(time.time()).split(".")[0][3:]
+        time_str
         + f"_epochs_{EPOCHS}-batch_size_{BATCH_SIZE}-lr_{LEARNING_RATE}"
     )
     model_name = (
@@ -80,22 +94,25 @@ if __name__ == "__main__":
         / "epoch_{epoch:02d}-val_acc_{val_accuracy:.2f}-val_loss_{val_loss:.2f}.hdf5"
     )
     full_model_path = model_path / "full_save"
+    tensorboard_log_path = Path(f"./model_saves/logs/{time_str}/")
 
     model_path.mkdir(parents=True, exist_ok=False)
     full_model_path.mkdir(parents=True, exist_ok=True)
+    tensorboard_log_path.mkdir(parents=True, exist_ok=False)
 
     # file location for saved model weights
-    # best so far: 3513226_epochs_15-batch_size_2-lr_1e-06
-    # new best: 3515192_epochs_15-batch_size_2-lr_1e-06
-    # 3520179_epochs_15-batch_size_2-lr_1e-06
-    # 3523832_epochs_15-batch_size_2-lr_1e-06
-    model_weights_save = Path("./model_saves/3531223_epochs_30-batch_size_2-lr_1e-06/epoch_17-val_acc_0.82-val_loss_0.42.hdf5")
+    # best so far: 0.9889 at 2021-06-26_17-23-26_epochs_100-batch_size_2000-lr_0.01
+    # 0.9878 at 2021-06-26_16-39-09_epochs_50-batch_size_2000-lr_0.01
+    # 0.9577 at 4746751_epochs_20-batch_size_5000-lr_0.001
+    model_weights_save = Path(
+        "./model_saves/4748001_epochs_50-batch_size_5000-lr_0.01/epoch_08-val_acc_0.83-val_loss_0.97.hdf5"
+    )
     model_full_save = Path(
-        "./model_saves/3698575_epochs_50-batch_size_2-lr_1e-06/full_save"
+        "./model_saves/2021-06-26_17-23-26_epochs_100-batch_size_2000-lr_0.01/full_save"
     )
 
     # load in data
-    X_train, y_train, X_test, y_test = load_data_np(np_path)
+    X_train, y_train, X_test, y_test = load_data_np()
 
     # load/create model
     if LOAD_MODEL == "full":
@@ -114,37 +131,47 @@ if __name__ == "__main__":
         mode="min",
     )
 
-    lr_schedule = keras.callbacks.LearningRateScheduler(
-        lambda epoch: LEARNING_RATE * 10 ** (epoch / 20)
+    early_stopping_callback = keras.callbacks.EarlyStopping(
+        monitor="val_loss",
+        mode="min",
+        min_delta=0.005,
+        patience=20,
+        verbose=1,
+        restore_best_weights=True,
     )
 
-    # for i in range(100):
-    #     print(model.predict(np.expand_dims(X_train[i], 0)))
-    #     print(y_train[i])
-    # exit()
-
-    history = model.fit(
-        X_train,
-        y_train,
-        validation_data=(X_test, y_test),
-        epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-        callbacks=[checkpoint_callback, lr_schedule],
+    lr_plateau_callback = keras.callbacks.ReduceLROnPlateau(
+        monitor="val_loss", mode="min", min_delta=0.005, patience=5, verbose=1,
     )
 
-    # lrs = LEARNING_RATE * (
-    #     10 ** np.arange(EPOCHS) / 20
-    # )  # using the lr_shedule function
-    # # general plotting code
-    # plt.semilogx(lrs, history.history["loss"])
-    # # numbers need to be modified to make a good graph
-    # # params: xmin, xmax, ymin, ymax
-    # # plt.axis([LEARNING_RATE, LEARNING_RATE*, 0, 300])
-    # plt.show()
+    tensorboard_callback = keras.callbacks.TensorBoard(log_dir=tensorboard_log_path, histogram_freq=1, update_freq="epoch", )
 
-    print("Saving full model to", str(full_model_path))
-    keras.models.save_model(
-        model, full_model_path,
-    )
+    # lr_schedule = keras.callbacks.LearningRateScheduler(
+    #     lambda epoch: LEARNING_RATE * 10 ** (epoch / 20)
+    # )
 
-    plot_history(history)
+    callbacks_list = [
+        checkpoint_callback,
+        early_stopping_callback,
+        lr_plateau_callback,
+        tensorboard_callback
+    ]
+
+    try:
+        history = model.fit(
+            X_train,
+            y_train,
+            validation_data=(X_test, y_test),
+            epochs=EPOCHS,
+            batch_size=BATCH_SIZE,
+            callbacks=callbacks_list,
+        )
+        plot_history(history)
+
+    finally:
+        print("Saving full model to", str(full_model_path))
+        keras.models.save_model(
+            model, full_model_path,
+        )
+
+        plt.show()

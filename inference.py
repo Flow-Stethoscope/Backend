@@ -10,7 +10,7 @@ from clean_dataset import load_data, process_data
 
 
 class Inference:
-    def __init__(self, model_path=Path("./HeartSounds_BinaryClassification_BLSTM"), sample_rate=125):
+    def __init__(self, model_path=Path("./BiLSTM_ECG"), sample_rate=125):
         self.model = keras.models.load_model(model_path)
         self.sample_rate = sample_rate
         self.data_len = 187

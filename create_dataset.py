@@ -4,21 +4,22 @@ import librosa
 import librosa.display
 
 from scipy.signal import butter, lfilter
-import math
+import numpy as np
 
 from pathlib import Path
 import csv
 
-DOWN_SR = 1000
-BPF_LOW = 20
-BPF_HIGH = 400
+DOWN_SR = 125
+BPF_LOW = int(DOWN_SR * 20 / 1000)
+BPF_HIGH = int(DOWN_SR * 400 / 1000)
 BPF_ORDER = 3
 
-AUDIO_LEN = 5  # in seconds
+AUDIO_LEN = 187 / DOWN_SR  # in seconds
+OVERLAP_LEN = AUDIO_LEN / 4  # in seconds
 
 
 def create_dataset(dataset_dir, output_path):
-    data = {"mfccs": [], "labels": []}
+    data = {"audio": [], "labels": []}
 
     for dataset_path in dataset_dir.iterdir():
         if "training-" in dataset_path.name:
@@ -30,12 +31,31 @@ def create_dataset(dataset_dir, output_path):
 
                     # print(f"Processing {file_name} at location {file_path}.")
 
-                    mfccs = process_audio_file(file_path, AUDIO_LEN)
-                    data["mfccs"] += mfccs
-                    data["labels"] += [int(label)] * len(mfccs)
+                    audio = process_audio_file(file_path, AUDIO_LEN)
+
+                    data["audio"] += audio
+                    data["labels"] += [int(label)] * len(audio)
 
     with open(output_path, "w") as f:
         json.dump(data, f, indent=4)
+    print("Saved output to", output_path)
+
+def create_test_set(test_set_dir, output_path):
+    data = {"audio": [], "labels": []}
+
+    with open(test_set_dir / "REFERENCE.csv", "r") as f:
+        csv_reader = csv.reader(f)
+        for file_name, label in csv_reader:
+            file_path = str(test_set_dir / file_name) + ".wav"
+
+            audio = process_audio_file(file_path, AUDIO_LEN)
+
+            data["audio"] += audio
+            data["labels"] += [int(label)] * len(audio)
+
+    with open(output_path, "w") as f:
+        json.dump(data, f, indent=4)
+    print("Saved output to", output_path)
 
 
 def process_audio_file(audio_path, sample_len):
@@ -46,33 +66,26 @@ def process_audio_file(audio_path, sample_len):
 def process_audio_np(audio_np, sample_len):
     audio = denoise_audio_np(audio_np)
 
-    n_fft = int(0.025 * DOWN_SR)
-    hop_len = int(0.01 * DOWN_SR)
-
     num_segments = int((audio.size / DOWN_SR) // sample_len)
     samples_per_segment = sample_len * DOWN_SR
-    expected_mfcc_per_segment = math.ceil(samples_per_segment / hop_len)
 
-    mfccs = []
+    audio_segments = []
     for current_segment in range(num_segments):
-        start = samples_per_segment * current_segment
-        end = start + samples_per_segment
+        start = int((samples_per_segment * current_segment) - (OVERLAP_LEN * samples_per_segment))
+        end = int(start + samples_per_segment)
 
-        # find mfcc
-        mfcc = librosa.feature.mfcc(
-            audio[start:end], DOWN_SR, n_fft=n_fft, hop_length=hop_len, n_mfcc=13
-        )
-        mfcc = mfcc.T
+        if start < 0:
+            end -= start
+            start = 0
+        end = min(end, len(audio))
 
-        if len(mfcc) == expected_mfcc_per_segment:
-            mfccs.append(mfcc.tolist())
-
-    return mfccs
+        audio_segments.append(audio[start:end].tolist())
+    return audio_segments
 
 
-def denoise_audio_np(audio_np, bpf_low=20, bpf_high=400, bpf_order=3):
+def denoise_audio_np(audio_np, bpf_low=BPF_LOW, bpf_high=BPF_HIGH, bpf_order=BPF_ORDER):
     audio = butter_bandpass_filter(audio_np, bpf_low, bpf_high, DOWN_SR, bpf_order)
-    return 2 * (audio - audio.min()) / (audio.max() - audio.min()) - 1.0  # normalize
+    return (audio - audio.min()) / (audio.max() - audio.min())  # normalize between 0 and 1
 
 
 # bandpass from https://scipy-cookbook.readthedocs.io/items/ButterworthBandpass.html
@@ -92,7 +105,7 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
 
 if __name__ == "__main__":
     datasets_path = Path("./datasets/classification-heart-sounds-physionet/")
-    data_output_path = Path("./datasets/data.json")
+    data_output_path = Path("./datasets/classification-heart-sounds-physionet/numpy-data/data.json")
 
     create_dataset(datasets_path, data_output_path)
 

@@ -22,26 +22,30 @@ def load_data_np(data_path):
 
 
 def create_transfer_model(X_shape, lr):
-    base_model = keras.models.load_model(transfer_fulL_save)
-    base_model.summary()
-    for layer in base_model.layers:
-        print(f"Input shape {layer.input_shape}")
+    # base_model = keras.models.load_model(transfer_fulL_save)
+    # base_model.summary()
+    # for layer in base_model.layers:
+    #     print(f"Input shape {layer.input_shape}")
+    #
+    # model = keras.Sequential()
+    #
+    # model.add(
+    #     keras.layers.Bidirectional(
+    #         keras.layers.LSTM(
+    #             128, input_shape=(X_shape[1], X_shape[2]), return_sequences=True
+    #         )
+    #     )
+    # )
+    #
+    # for layer in base_model.layers[1:]:
+    #     model.add(layer)
+    #
+    # for idx, _ in enumerate(model.layers[1:3]):
+    #     model.layers[idx].trainable = False
+    model = keras.models.load_model(transfer_fulL_save)
 
-    model = keras.Sequential()
-
-    model.add(
-        keras.layers.Bidirectional(
-            keras.layers.LSTM(
-                128, input_shape=(X_shape[1], X_shape[2]), return_sequences=True
-            )
-        )
-    )
-
-    for layer in base_model.layers[1:]:
-        model.add(layer)
-
-    for idx, _ in enumerate(model.layers[1:3]):
-        model.layers[idx].trainable = False
+    # for idx, _ in enumerate(model.layers[1:3]):
+    #     model.layers[idx].trainable = False
 
     model.build(X_shape)
     optimizer = keras.optimizers.Adam(learning_rate=lr, amsgrad=True)
@@ -69,7 +73,7 @@ if __name__ == "__main__":
 
     EPOCHS = 500
     BATCH_SIZE = 1000
-    LEARNING_RATE = 1e-2
+    LEARNING_RATE = 1e-1
 
     LOAD_MODEL = "full"  # "full", "weights", "none", or "transfer
 
@@ -93,11 +97,12 @@ if __name__ == "__main__":
     # file location for saved model weights
     # best so far:
     # 0.6086 at 2021-06-26_21-04-45_epochs_100-batch_size_1000-lr_0.01
+    # 0.8 at 2021-06-27_05-16-49_epochs_500-batch_size_1000-lr_0.01/TRANSFER_epoch_88-val_acc_0.80-val_loss_0.45.hdf5
     # transfer weights save:
     transfer_fulL_save = Path("./model_saves/transfer/transfer-base-weights/full_save")
-    model_weights_save = Path("./model_saves/transfer/")
+    model_weights_save = Path("./model_saves/transfer/2021-06-27_05-16-49_epochs_500-batch_size_1000-lr_0.01/TRANSFER_epoch_88-val_acc_0.80-val_loss_0.45.hdf5")
     model_full_save = Path(
-        "./model_saves/transfer/2021-06-26_21-54-35_epochs_500-batch_size_1000-lr_0.01/full_save"
+        "./model_saves/transfer/2021-06-27_05-57-14_epochs_500-batch_size_1000-lr_0.01/full_save"
     )
 
     # load in data
@@ -134,7 +139,7 @@ if __name__ == "__main__":
     )
 
     lr_plateau_callback = keras.callbacks.ReduceLROnPlateau(
-        monitor="val_loss", mode="min", min_delta=0.005, patience=5, verbose=1,
+        monitor="val_loss", mode="min", min_delta=0.005, patience=15, verbose=1,
     )
 
     tensorboard_callback = keras.callbacks.TensorBoard(

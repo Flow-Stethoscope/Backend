@@ -10,9 +10,8 @@ def load_data(dataset_path):
         data = json.load(f)
 
     # convert lists back to np arrays
-    X = np.array(data["mfccs"])
+    X = np.array(data["audio"])
     y = np.array(data["labels"])
-    # shapes: X (13015, 500, 13), y (13015,)
 
     print(f"Data loaded. X shape: {X.shape}, y shape: {y.shape}")
     return X, y
@@ -26,6 +25,9 @@ def unison_shuffled_copies(a, b):
 
 
 def process_data(X, y):
+    # add dimension to make it uniform with other dataset
+    X = np.expand_dims(X, -1)
+
     # convert to 1 for abnormal and 0 for normal
     y[y == -1] = 0
 
@@ -59,8 +61,8 @@ def process_data(X, y):
 
 
 if __name__ == "__main__":
-    json_path = Path("./datasets/data.json")
-    np_path = Path("./datasets/")
+    json_path = Path("./datasets/classification-heart-sounds-physionet/numpy-data/data.json")
+    np_path = Path("./datasets/classification-heart-sounds-physionet/numpy-data/")
 
     print("Loading data from", str(json_path))
     X, y = load_data(json_path)

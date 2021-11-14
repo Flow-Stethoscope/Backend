@@ -1,3 +1,7 @@
+"""
+Author: Ani Aggarwal
+Github: www.github.com/AniAggarwal
+"""
 import json
 from pathlib import Path
 

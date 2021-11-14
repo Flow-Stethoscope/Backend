@@ -1,3 +1,5 @@
+Author of this document: [Ani Aggarwal](www.github.com/AniAggarwal)
+
 Disclaimer: This is **NOT** a COPY or CHEAT of the project [FLOW](https://devpost.com/software/flow-tz1nhp). The implementation, from the device to our ML algorithm, is **completely** different. This project was completely written from the ground up with no usages of code from Flow (you can cross-reference the projects). We understand that at first glance, many people may think that this is a copy of Flow, which is why we feel the need to add this disclaimer. Thank you.
 
 ## Inspiration

@@ -1,3 +1,7 @@
+"""
+Author: Ani Aggarwal
+Github: www.github.com/AniAggarwal
+"""
 from pathlib import Path
 import datetime
 
@@ -61,6 +65,7 @@ def create_model(X_shape, lr):
 
     return model
 
+
 def plot_history(history):
     fig, axes = plt.subplots(nrows=2, ncols=1)
     axes[0].title.set_text("Loss")
@@ -78,10 +83,10 @@ if __name__ == "__main__":
     mirrored_strategy = tf.distribute.MirroredStrategy()
 
     EPOCHS = 100
-    BATCH_SIZE = 2000
+    BATCH_SIZE = 1500
     LEARNING_RATE = 1e-2
 
-    LOAD_MODEL = "full"  # "full", "weights", or "none"
+    LOAD_MODEL = "none"  # "full", "weights", or "none"
 
     time_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     data_path = Path("./datasets/ECG-kaggle/mitbih_train.csv")
@@ -108,7 +113,7 @@ if __name__ == "__main__":
         "./model_saves/4748001_epochs_50-batch_size_5000-lr_0.01/epoch_08-val_acc_0.83-val_loss_0.97.hdf5"
     )
     model_full_save = Path(
-        "./model_saves/2021-06-26_17-23-26_epochs_100-batch_size_2000-lr_0.01/full_save"
+        "./model_saves/2021-06-28_19-22-14_epochs_100-batch_size_2000-lr_0.01/full_save"
     )
 
     # load in data

@@ -1,3 +1,7 @@
+"""
+Author: Ani Aggarwal
+Github: www.github.com/AniAggarwal
+"""
 import tensorflow.keras as keras
 from tensorflow.keras import backend as K
 import numpy as np

@@ -1,3 +1,7 @@
+"""
+Author: Ani Aggarwal
+Github: www.github.com/AniAggarwal
+"""
 from pathlib import Path
 
 import soundfile

@@ -1,3 +1,8 @@
+# Video Overview + Presentation
+
+Click the thumbnail below to watch the video on YouTube:
+[![Video Presentation](https://i.ytimg.com/vi/HuGE4DKBqxs/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AHUBoAC4AOKAgwIABABGHIgPShHMA8=&rs=AOn4CLBbnV3hcpdX7TcauIt-H9L62qm8sQ)](https://youtu.be/HuGE4DKBqxs)
+
 # Inspiration
 Our concept was sparked by the notorious COVID-19. Not only has COVID-19 directly killed millions of people globally but has indirectly harmed the lives of those who suffer from heart disease. This is because these patients can no longer meet with their doctors at their typical hospital due to the risks it poses and distancing guidelines/other regulations. Currently, physicians and med students can only identify heart disease with a scary rate of 20% accuracy. Additionally, heart disease is the leading cause of death in India, America, Europe, and more. Not only this, but heart arrhythmia garners over 3 million cases a year, and can even occur without many symptoms while requiring immediate medical treatment. As a result, I noticed a need for a mechanism to correctly self-diagnose patients suffering from cardiac issues remotely such as heart arrhythmia, as well as a mobile app for patients to connect with their physicians. HeartPal arose as a result of this.
 
